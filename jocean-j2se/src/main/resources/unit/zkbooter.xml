@@ -1,0 +1,41 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<beans xmlns="http://www.springframework.org/schema/beans"
+       xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+       xsi:schemaLocation="http://www.springframework.org/schema/beans
+        http://www.springframework.org/schema/beans/spring-beans.xsd">
+        
+    <bean class="org.springframework.beans.factory.config.PropertyPlaceholderConfigurer">
+        <property name="locations">
+            <list>
+                <value>classpath:${zkbooter:zkbooter.properties}</value>
+            </list>
+        </property>
+        <property name="fileEncoding" value="UTF-8"/>
+    </bean>
+    
+    <bean id="zkClient" class="org.jocean.j2se.zk.ZKUtils"
+        factory-method="buildWithExhibitorEnsembleProvider"
+        init-method="start"
+        destroy-method="close">
+        <constructor-arg>
+            <bean class="org.springframework.util.StringUtils"
+                factory-method="commaDelimitedListToStringArray">
+                <constructor-arg value="${exhibitor.hosts}"/>
+            </bean>
+        </constructor-arg>
+        <constructor-arg value="${exhibitor.restport}"/>
+        <constructor-arg value="${zk.address}"/>
+        <constructor-arg value="${exhibitor.basicAuthUser:}"/>
+        <constructor-arg value="${exhibitor.basicAuthPass:}"/>
+        <constructor-arg value="${exhibitor.restUriPath:/exhibitor/v1/cluster/list}"/>
+        <constructor-arg value="${exhibitor.pollingMs:2000}"/>
+        <constructor-arg>
+            <bean class="org.apache.curator.retry.ExponentialBackoffRetry">
+                <constructor-arg value="1000"/>
+                <constructor-arg value="3"/>
+            </bean>
+        </constructor-arg>
+    </bean>
+    
+    <import resource="classpath:unit/zkcore.xml"/>
+</beans>

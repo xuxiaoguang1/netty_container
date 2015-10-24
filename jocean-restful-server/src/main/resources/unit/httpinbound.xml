@@ -1,0 +1,57 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<beans xmlns="http://www.springframework.org/schema/beans"
+       xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+       xsi:schemaLocation="http://www.springframework.org/schema/beans
+        http://www.springframework.org/schema/beans/spring-beans.xsd">
+    
+    <bean id="httpfeatures" class="java.util.concurrent.CopyOnWriteArrayList" />
+        
+    <bean id="agentServer" 
+        factory-bean="httpServer" 
+        factory-method="defineServer">
+        <constructor-arg>
+            <bean class="java.net.InetSocketAddress">
+                <constructor-arg value="${http.ip:0.0.0.0}"/>
+                <constructor-arg value="${http.port:8080}"/>
+            </bean>
+        </constructor-arg>
+        <constructor-arg>
+            <bean class="org.jocean.http.util.FeaturesBuilder">
+                <constructor-arg ref="httpfeatures"/>
+            </bean>
+        </constructor-arg>
+    </bean>
+    
+    <bean id="registrar" class="org.jocean.restful.RegistrarImpl">
+        <constructor-arg ref="eventEngine"/>
+        <property name="beanHolder" ref="${beanHolder.name:unitAgent}"/>
+    </bean>
+    
+    <bean id="jsonProvider" class="org.jocean.json.FastJSONProvider" />
+   
+    <bean id="extraHeaders" class="java.util.concurrent.ConcurrentHashMap"/>
+    
+    <bean factory-bean="agentServer" 
+        factory-method="subscribe"
+        destroy-method="unsubscribe">
+        <constructor-arg>
+            <bean class="org.jocean.restful.trade.RestfulSubscriber">
+		        <constructor-arg ref="registrar" />
+		        <constructor-arg ref="jsonProvider" />
+		        <property name="defaultContentType" value="${restful.default.contenttype:application/json; charset=UTF-8}"/>
+                <property name="extraHeaders" ref="extraHeaders"/>
+		    </bean>
+        </constructor-arg>
+    </bean>
+    
+    <bean id="registrarExporter" class="org.springframework.jmx.export.MBeanExporter"
+          lazy-init="false">
+        <property name="beans">
+            <map>
+                <entry key="org.jocean:name=flowRegistrar" 
+                    value-ref="registrar"/>
+            </map>
+        </property>
+    </bean>
+    
+</beans>
